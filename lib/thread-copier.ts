@@ -82,7 +82,11 @@ function formatTimestamp(ts: string): string {
 export async function fetchThreadWithUserInfo(
   channelId: string,
   threadTs: string
-): Promise<{ messages: ThreadMessage[]; error?: string }> {
+): Promise<{
+  messages: ThreadMessage[];
+  userNameMap: Map<string, string>;
+  error?: string;
+}> {
   try {
     const response = await client.conversations.replies({
       channel: channelId,
@@ -93,6 +97,7 @@ export async function fetchThreadWithUserInfo(
     if (!response.messages || response.messages.length === 0) {
       return {
         messages: [],
+        userNameMap: new Map(), // Return empty map if no messages
         error: "No messages found in the thread",
       };
     }
@@ -114,19 +119,33 @@ export async function fetchThreadWithUserInfo(
 
     const messages: ThreadMessage[] = response.messages
       .filter((msg) => msg.text) // Only include messages with text
-      .map((msg) => ({
-        user: msg.user || "bot",
-        text: msg.text || "",
-        timestamp: msg.ts || "",
-        userName: msg.user ? userNameMap.get(msg.user) : msg.username || "Bot",
-        isBot: !!msg.bot_id,
-      }));
+      .map((msg) => {
+        const isBot = !!msg.bot_id;
+        let userName: string;
 
-    return { messages };
+        if (isBot) {
+          // For bot messages, use msg.username if available, otherwise "Bot"
+          userName = msg?.user || "Bot";
+        } else {
+          // For user messages, get from userNameMap
+          userName = (msg.user && userNameMap.get(msg.user)) || "Unknown User";
+        }
+
+        return {
+          user: msg.user || "bot", // Default to "bot" if user is undefined (for bot messages)
+          text: msg.text || "",
+          timestamp: msg.ts || "",
+          userName: userName,
+          isBot: isBot,
+        } as ThreadMessage;
+      });
+
+    return { messages, userNameMap };
   } catch (error: any) {
     console.error("Error fetching thread:", error);
     return {
       messages: [],
+      userNameMap: new Map(), // Return empty map on error
       error: `Failed to fetch thread: ${error.message}`,
     };
   }
@@ -136,7 +155,8 @@ export async function fetchThreadWithUserInfo(
 export function formatThreadForCopy(
   messages: ThreadMessage[],
   sourceChannelId: string,
-  threadTs: string
+  threadTs: string,
+  userNameMap: Map<string, string> // Added userNameMap as an argument
 ): string {
   if (messages.length === 0) {
     return "No messages to copy";
@@ -158,7 +178,7 @@ export function formatThreadForCopy(
       // Clean up the text - remove bot mentions, format nicely
       let cleanText = msg.text
         .replace(/<@[A-Z0-9]+>/g, (match) => {
-          // Try to get user name from mention
+          // Resolve user IDs to names using the passed userNameMap
           const userId = match.slice(2, -1);
           return `@${userNameMap.get(userId) || "user"}`;
         })
@@ -212,8 +232,8 @@ export async function copyThread(
   }
 
   try {
-    // Fetch the thread messages
-    const { messages, error } = await fetchThreadWithUserInfo(
+    // Fetch the thread messages and the userNameMap
+    const { messages, userNameMap, error } = await fetchThreadWithUserInfo(
       sourceInfo.channelId,
       sourceInfo.threadTs || sourceInfo.messageTs
     );
@@ -225,11 +245,12 @@ export async function copyThread(
       };
     }
 
-    // Format the thread for copying
+    // Format the thread for copying, passing the userNameMap
     const formattedThread = formatThreadForCopy(
       messages,
       sourceInfo.channelId,
-      sourceInfo.threadTs || sourceInfo.messageTs
+      sourceInfo.threadTs || sourceInfo.messageTs,
+      userNameMap // Pass userNameMap here
     );
 
     // Post to destination channel

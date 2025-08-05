@@ -104,8 +104,8 @@ export async function getThreadWithPermissionCheck(
     // Check if we're getting the full thread or just partial access
     const hasFullAccess =
       response.messages.length > 1 ||
-      channelInfo?.channel?.is_im ||
-      channelInfo?.channel?.is_mpim;
+      (channelInfo?.channel?.is_im ?? false) || // Added ?? false
+      (channelInfo?.channel?.is_mpim ?? false); // Added ?? false
 
     const messages = response.messages
       .map((message) => {

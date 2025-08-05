@@ -1,8 +1,5 @@
 import type { SlackEvent } from "@slack/web-api";
-import {
-  assistantThreadMessage,
-  handleNewAssistantMessage,
-} from "../lib/handle-messages";
+import { handleNewAssistantMessage } from "../lib/handle-messages";
 import { waitUntil } from "@vercel/functions";
 import { handleNewAppMention } from "../lib/handle-app-mention";
 import { verifyRequest, getBotId } from "../lib/slack-utils";
