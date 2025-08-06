@@ -29,11 +29,9 @@ export class WeatherAgent implements ToolAgent {
       const { text } = await generateText({
         model: openai("gpt-4o-mini"),
         system: `You are a weather assistant. Extract location and provide weather information.
-         When users ask about weather, use the getWeather tool to fetch current conditions.
-         Always provide temperature in both Celsius and Fahrenheit.`,
+         When users ask about weather, use the getWeather tool to fetch current conditions.
+         Always provide temperature in both Celsius and Fahrenheit.`,
         messages,
-        // REMOVED: `maxSteps: 5` is not a valid property for generateText configuration.
-        // It's part of the older `create` function from `langchain/openai`.
         tools: {
           getWeather: tool({
             description: "Get weather for a location",
@@ -41,9 +39,7 @@ export class WeatherAgent implements ToolAgent {
               latitude: z.number().describe("Latitude of the location"),
               longitude: z.number().describe("Longitude of the location"),
               city: z.string().describe("Name of the city"),
-            }),
-            // CORRECTED: The `execute` function must be a regular async function,
-            // not an anonymous function with an `async` arrow function body.
+            }), // CORRECTED: The `execute` property is now a direct async function.
             execute: async ({ latitude, longitude, city }) => {
               try {
                 const response = await fetch(
@@ -54,9 +50,8 @@ export class WeatherAgent implements ToolAgent {
                   throw new Error(`Weather API error: ${response.status}`);
                 }
 
-                const data = await response.json();
+                const data = await response.json(); // Map weather codes to descriptions
 
-                // Map weather codes to descriptions
                 const weatherDescriptions: { [key: number]: string } = {
                   0: "Clear sky",
                   1: "Mainly clear",
