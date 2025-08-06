@@ -1,4 +1,5 @@
 import { openai } from "@ai-sdk/openai";
+import { perplexity } from "@ai-sdk/perplexity";
 import { CoreMessage, generateText, tool } from "ai";
 import { z } from "zod";
 import { exa } from "./utils";
@@ -12,7 +13,7 @@ export const generateResponse = async (
   context?: { channel?: string; threadTs?: string; botUserId?: string }
 ) => {
   const { text } = await generateText({
-    model: openai("gpt-4o"),
+    model: perplexity("sonar-pro"),
     system: `You are a Slack bot assistant. Keep your responses concise and to the point.
     - Do not tag users.
     - Current date is: ${new Date().toISOString().split("T")[0]}
