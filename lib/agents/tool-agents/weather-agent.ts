@@ -39,7 +39,7 @@ export class WeatherAgent implements ToolAgent {
               latitude: z.number().describe("Latitude of the location"),
               longitude: z.number().describe("Longitude of the location"),
               city: z.string().describe("Name of the city"),
-            }), // CORRECTED: The `execute` property is now a direct async function.
+            }),
             execute: async ({ latitude, longitude, city }) => {
               try {
                 const response = await fetch(
@@ -50,7 +50,7 @@ export class WeatherAgent implements ToolAgent {
                   throw new Error(`Weather API error: ${response.status}`);
                 }
 
-                const data = await response.json(); // Map weather codes to descriptions
+                const data = await response.json();
 
                 const weatherDescriptions: { [key: number]: string } = {
                   0: "Clear sky",
