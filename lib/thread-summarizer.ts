@@ -14,7 +14,7 @@ export async function summarizeThread(
 
   try {
     const { text } = await generateText({
-      model: perplexity("sonar-pro"),
+      model: openai("gpt-4o"),
       system: `You are a helpful Slack assistant that creates concise, clear thread summaries.
       When summarizing threads:
       - Identify key topics and decisions made
