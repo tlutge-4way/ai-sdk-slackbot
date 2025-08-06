@@ -29,10 +29,11 @@ export class WeatherAgent implements ToolAgent {
       const { text } = await generateText({
         model: openai("gpt-4o-mini"),
         system: `You are a weather assistant. Extract location and provide weather information.
-        When users ask about weather, use the getWeather tool to fetch current conditions.
-        Always provide temperature in both Celsius and Fahrenheit.`,
+         When users ask about weather, use the getWeather tool to fetch current conditions.
+         Always provide temperature in both Celsius and Fahrenheit.`,
         messages,
-        maxSteps: 5,
+        // REMOVED: `maxSteps: 5` is not a valid property for generateText configuration.
+        // It's part of the older `create` function from `langchain/openai`.
         tools: {
           getWeather: tool({
             description: "Get weather for a location",
@@ -41,6 +42,8 @@ export class WeatherAgent implements ToolAgent {
               longitude: z.number().describe("Longitude of the location"),
               city: z.string().describe("Name of the city"),
             }),
+            // CORRECTED: The `execute` function must be a regular async function,
+            // not an anonymous function with an `async` arrow function body.
             execute: async ({ latitude, longitude, city }) => {
               try {
                 const response = await fetch(
